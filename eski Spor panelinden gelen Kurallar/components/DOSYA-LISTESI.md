@@ -1,0 +1,29 @@
+# Components Dosya Listesi
+
+- `components/AppMenu-KURALLAR.md`
+- `components/AppointmentPackageSelector-KURALLAR.md`
+- `components/BackButton-KURALLAR.md`
+- `components/CalendarForm-KURALLAR.md`
+- `components/NewAppointmentForm-KURALLAR.md`
+- `components/NewPackageMemberSummary-KURALLAR.md`
+- `components/PackageAutoScheduleFields-KURALLAR.md`
+- `components/PackageBranchField-KURALLAR.md`
+- `components/PaymentMethodPeriodFilter-KURALLAR.md`
+- `components/PaymentPackageSelector-KURALLAR.md`
+- `components/PaymentStatusFields-KURALLAR.md`
+- `components/PaymentsTableClient-KURALLAR.md`
+- `components/ProfilePhotoPicker-KURALLAR.md`
+- `components/ToggleSwitch-KURALLAR.md`
+- `components/TrainerForm-KURALLAR.md`
+- `components/payments/ReceiptActions-KURALLAR.md`
+- `components/settings/AppointmentSettingsClient-KURALLAR.md`
+- `components/settings/AppointmentSettingsPanel-KURALLAR.md`
+- `components/settings/BusinessSettingsForm-KURALLAR.md`
+- `components/settings/CreateUserForm-KURALLAR.md`
+- `components/settings/FinanceSettingsClient-KURALLAR.md`
+- `components/settings/FormsContractsClient-KURALLAR.md`
+- `components/settings/FormsContractsLoader-KURALLAR.md`
+- `components/settings/NotificationSettingsClient-KURALLAR.md`
+- `components/settings/PackageSettingsClient-KURALLAR.md`
+- `components/settings/RolesPermissionsClient-KURALLAR.md`
+- `components/settings/UserManagementCard-KURALLAR.md`

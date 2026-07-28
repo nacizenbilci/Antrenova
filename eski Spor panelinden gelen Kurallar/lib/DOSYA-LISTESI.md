@@ -1,0 +1,29 @@
+# Lib Dosya Listesi
+
+- `lib/access-control-KURALLAR.md`
+- `lib/appointment-rules-KURALLAR.md`
+- `lib/appointment-settings-server-KURALLAR.md`
+- `lib/appointment-validation-KURALLAR.md`
+- `lib/auth-config-KURALLAR.md`
+- `lib/business-settings-data-KURALLAR.md`
+- `lib/finance-settings-server-KURALLAR.md`
+- `lib/finance-settings-types-KURALLAR.md`
+- `lib/form-contracts-data-KURALLAR.md`
+- `lib/notification-settings-types-KURALLAR.md`
+- `lib/notifications/emit-notification-event-KURALLAR.md`
+- `lib/notifications/event-definitions-KURALLAR.md`
+- `lib/notifications/notification-engine-KURALLAR.md`
+- `lib/notifications/process-notification-queue-KURALLAR.md`
+- `lib/notifications/providers/README-KURALLAR.md`
+- `lib/notifications/server-KURALLAR.md`
+- `lib/notifications/template-renderer-KURALLAR.md`
+- `lib/notifications/types-KURALLAR.md`
+- `lib/package-settings-KURALLAR.md`
+- `lib/permissions-config-KURALLAR.md`
+- `lib/server-auth-KURALLAR.md`
+- `lib/settings-config-KURALLAR.md`
+- `lib/settings-data-KURALLAR.md`
+- `lib/supabase-KURALLAR.md`
+- `lib/supabase-admin-KURALLAR.md`
+- `lib/supabase-server-KURALLAR.md`
+- `lib/user-data-KURALLAR.md`
