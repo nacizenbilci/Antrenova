@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Moon, Search, Sun } from "lucide-react";
+import { Bell, Search } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { usePathname } from "next/navigation";
 
 const routeTitles: Record<string, string> = {
@@ -67,17 +68,7 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Tema değiştir"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white"
-          >
-            <Sun className="h-[18px] w-[18px] dark:hidden" strokeWidth={1.8} />
-            <Moon
-              className="hidden h-[18px] w-[18px] dark:block"
-              strokeWidth={1.8}
-            />
-          </button>
+          <ThemeToggle />
 
           <button
             type="button"
