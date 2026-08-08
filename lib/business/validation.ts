@@ -104,3 +104,28 @@ export const updateBusinessSchema = z.object({
 
 export type UpdateBusinessSchema =
   z.infer<typeof updateBusinessSchema>;
+
+  export const createBusinessSchema =
+  updateBusinessSchema.omit({
+    businessId: true,
+  });
+
+export type CreateBusinessSchema =
+  z.infer<typeof createBusinessSchema>;
+
+  export const setBusinessActiveStatusSchema =
+  z.object({
+    businessId: uuidSchema,
+    isActive: z.boolean(),
+  });
+
+export type SetBusinessActiveStatusSchema =
+  z.infer<typeof setBusinessActiveStatusSchema>;
+
+export const archiveBusinessSchema =
+  z.object({
+    businessId: uuidSchema,
+  });
+
+export type ArchiveBusinessSchema =
+  z.infer<typeof archiveBusinessSchema>;

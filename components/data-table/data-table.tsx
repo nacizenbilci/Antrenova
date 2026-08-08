@@ -22,9 +22,9 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border border-neutral-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-sm)]">
         {emptyState ?? (
-          <div className="p-8 text-center text-sm text-neutral-500">
+          <div className="px-6 py-16 text-center text-sm text-muted">
             Gösterilecek kayıt bulunamadı.
           </div>
         )}
@@ -33,19 +33,19 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-sm)]">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
-          <thead className="bg-neutral-50">
+          <thead className="bg-surface-subtle">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
                   scope="col"
                   className={[
-                    "whitespace-nowrap border-b border-neutral-200",
-                    "px-4 py-3 text-xs font-semibold",
-                    "uppercase tracking-wide text-neutral-500",
+                    "whitespace-nowrap border-b border-border-subtle",
+                    "px-5 py-3.5 text-[11px] font-semibold",
+                    "uppercase tracking-[0.08em] text-muted",
                     column.className ?? "",
                   ].join(" ")}
                 >
@@ -55,17 +55,17 @@ export function DataTable<T>({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-neutral-100">
+          <tbody className="divide-y divide-border-subtle">
             {data.map((row) => (
               <tr
                 key={getRowKey(row)}
-                className="transition-colors hover:bg-neutral-50"
+                className="transition-colors hover:bg-surface-subtle"
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
                     className={[
-                      "px-4 py-4 text-sm text-neutral-700",
+                      "px-5 py-4 text-sm text-muted-foreground",
                       column.className ?? "",
                     ].join(" ")}
                   >

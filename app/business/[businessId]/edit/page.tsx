@@ -44,8 +44,8 @@ export default async function BusinessEditPage({
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
-      <BusinessEditForm detail={detail} />
-    </main>
-  );
+  <div className="mx-auto w-full max-w-5xl">
+    <BusinessEditForm detail={detail} />
+  </div>
+);
 }

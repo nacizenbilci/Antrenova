@@ -1,19 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Building2 } from "lucide-react";
 
-import { updateBusinessAction } from "@/lib/business/actions";
-
-import type {
-  BusinessDetailRecord,
-} from "@/lib/repositories/business.repository";
+import { createBusinessAction } from "@/lib/business/actions";
 
 import { FormField } from "@/components/forms/form-field";
 import { Input } from "@/components/forms/input";
-import { Textarea } from "@/components/forms/textarea";
 import { Select } from "@/components/forms/select";
+import { Textarea } from "@/components/forms/textarea";
 import { SubmitButton } from "@/components/forms/submit-button";
 
 import {
@@ -22,21 +19,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 
-type BusinessEditFormProps = {
-  detail: BusinessDetailRecord;
-};
-
 type FieldErrors = Record<string, string[]>;
 
-export function BusinessEditForm({
-  detail,
-}: BusinessEditFormProps) {
-  const {
-    business,
-    profile,
-    address,
-    settings,
-  } = detail;
+export function BusinessCreateForm() {
+  const router = useRouter();
 
   const [fieldErrors, setFieldErrors] =
     useState<FieldErrors>({});
@@ -44,19 +30,11 @@ export function BusinessEditForm({
   const [message, setMessage] =
     useState<string | null>(null);
 
-  const [success, setSuccess] =
-    useState(false);
-
-  async function handleSubmit(
-    formData: FormData,
-  ) {
+  async function handleSubmit(formData: FormData) {
     setFieldErrors({});
     setMessage(null);
-    setSuccess(false);
 
-    const result = await updateBusinessAction({
-      businessId: business.id,
-
+    const result = await createBusinessAction({
       name: formData.get("name"),
       slug: formData.get("slug"),
 
@@ -91,49 +69,51 @@ export function BusinessEditForm({
       return;
     }
 
-    setSuccess(true);
-    setMessage(
-      "İşletme bilgileri başarıyla güncellendi.",
+    router.push(
+      `/business/${result.data.businessId}`,
     );
+
+    router.refresh();
   }
 
   return (
-    <form
-      action={handleSubmit}
-      className="space-y-6"
-    >
-      <div>
-        <Link
-          href={`/business/${business.id}`}
-          className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-foreground"
-        >
-          <ArrowLeft
-            className="h-4 w-4"
+    <form action={handleSubmit} className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Link
+            href="/business"
+            className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-foreground"
+          >
+            <ArrowLeft
+              className="h-4 w-4"
+              strokeWidth={1.8}
+            />
+            İşletmelere Dön
+          </Link>
+
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Yeni İşletme
+          </h1>
+
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
+            AntreNova platformuna yeni bir işletme
+            oluşturun. Zorunlu alanlar yıldız ile
+            işaretlenmiştir.
+          </p>
+        </div>
+
+        <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-muted sm:flex">
+          <Building2
+            className="h-5 w-5 text-muted-foreground"
             strokeWidth={1.8}
           />
-          İşletmeye Dön
-        </Link>
-
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          İşletme Düzenle
-        </h1>
-
-        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
-          {business.name} işletmesinin temel
-          bilgilerini, adresini ve bölgesel ayarlarını
-          güncelleyin.
-        </p>
+        </div>
       </div>
 
       {message ? (
         <div
           role="alert"
-          className={[
-            "rounded-xl border px-4 py-3 text-sm",
-            success
-              ? "border-success/20 bg-success-background text-success"
-              : "border-danger/20 bg-danger-background text-danger",
-          ].join(" ")}
+          className="rounded-xl border border-danger/20 bg-danger-background px-4 py-3 text-sm text-danger"
         >
           {message}
         </div>
@@ -146,8 +126,8 @@ export function BusinessEditForm({
           </h2>
 
           <p className="mt-1 text-sm text-muted">
-            İşletmenin platformdaki temel kimlik,
-            iletişim ve ticari bilgileri.
+            İşletmenin platformdaki temel kimlik ve
+            iletişim bilgileri.
           </p>
         </CardHeader>
 
@@ -162,8 +142,8 @@ export function BusinessEditForm({
               <Input
                 id="name"
                 name="name"
-                defaultValue={business.name}
                 autoComplete="organization"
+                placeholder="Örn. Nova Fitness"
                 hasError={Boolean(fieldErrors.name)}
               />
             </FormField>
@@ -177,7 +157,7 @@ export function BusinessEditForm({
               <Input
                 id="slug"
                 name="slug"
-                defaultValue={business.slug}
+                placeholder="nova-fitness"
                 autoCapitalize="none"
                 hasError={Boolean(fieldErrors.slug)}
               />
@@ -191,9 +171,7 @@ export function BusinessEditForm({
               <Input
                 id="legalName"
                 name="legalName"
-                defaultValue={
-                  profile?.legal_name ?? ""
-                }
+                placeholder="Nova Fitness Spor Hizmetleri Ltd. Şti."
               />
             </FormField>
 
@@ -207,9 +185,7 @@ export function BusinessEditForm({
                 name="phone"
                 type="tel"
                 autoComplete="tel"
-                defaultValue={
-                  profile?.phone ?? ""
-                }
+                placeholder="+90 555 000 00 00"
               />
             </FormField>
 
@@ -223,12 +199,8 @@ export function BusinessEditForm({
                 name="email"
                 type="email"
                 autoComplete="email"
-                defaultValue={
-                  profile?.email ?? ""
-                }
-                hasError={Boolean(
-                  fieldErrors.email,
-                )}
+                placeholder="info@novafitness.com"
+                hasError={Boolean(fieldErrors.email)}
               />
             </FormField>
 
@@ -241,12 +213,8 @@ export function BusinessEditForm({
                 id="website"
                 name="website"
                 type="url"
-                defaultValue={
-                  profile?.website ?? ""
-                }
-                hasError={Boolean(
-                  fieldErrors.website,
-                )}
+                placeholder="https://novafitness.com"
+                hasError={Boolean(fieldErrors.website)}
               />
             </FormField>
 
@@ -258,9 +226,6 @@ export function BusinessEditForm({
               <Input
                 id="taxOffice"
                 name="taxOffice"
-                defaultValue={
-                  profile?.tax_office ?? ""
-                }
               />
             </FormField>
 
@@ -272,9 +237,6 @@ export function BusinessEditForm({
               <Input
                 id="taxNumber"
                 name="taxNumber"
-                defaultValue={
-                  profile?.tax_number ?? ""
-                }
               />
             </FormField>
 
@@ -282,16 +244,12 @@ export function BusinessEditForm({
               <FormField
                 label="Açıklama"
                 name="description"
-                error={
-                  fieldErrors.description?.[0]
-                }
+                error={fieldErrors.description?.[0]}
               >
                 <Textarea
                   id="description"
                   name="description"
-                  defaultValue={
-                    profile?.description ?? ""
-                  }
+                  placeholder="İşletme hakkında kısa açıklama..."
                 />
               </FormField>
             </div>
@@ -306,8 +264,7 @@ export function BusinessEditForm({
           </h2>
 
           <p className="mt-1 text-sm text-muted">
-            İşletmenin merkez adres bilgilerini
-            güncelleyin.
+            İşletmenin merkez adresini tanımlayın.
           </p>
         </CardHeader>
 
@@ -317,17 +274,13 @@ export function BusinessEditForm({
               label="Ülke Kodu"
               name="countryCode"
               required
-              error={
-                fieldErrors.countryCode?.[0]
-              }
+              error={fieldErrors.countryCode?.[0]}
             >
               <Input
                 id="countryCode"
                 name="countryCode"
+                defaultValue="TR"
                 maxLength={2}
-                defaultValue={
-                  address?.country_code ?? "TR"
-                }
                 hasError={Boolean(
                   fieldErrors.countryCode,
                 )}
@@ -343,9 +296,7 @@ export function BusinessEditForm({
                 id="city"
                 name="city"
                 autoComplete="address-level1"
-                defaultValue={
-                  address?.city ?? ""
-                }
+                placeholder="Nevşehir"
               />
             </FormField>
 
@@ -358,26 +309,18 @@ export function BusinessEditForm({
                 id="district"
                 name="district"
                 autoComplete="address-level2"
-                defaultValue={
-                  address?.district ?? ""
-                }
               />
             </FormField>
 
             <FormField
               label="Posta Kodu"
               name="postalCode"
-              error={
-                fieldErrors.postalCode?.[0]
-              }
+              error={fieldErrors.postalCode?.[0]}
             >
               <Input
                 id="postalCode"
                 name="postalCode"
                 autoComplete="postal-code"
-                defaultValue={
-                  address?.postal_code ?? ""
-                }
               />
             </FormField>
 
@@ -385,16 +328,12 @@ export function BusinessEditForm({
               <FormField
                 label="Adres"
                 name="addressLine"
-                error={
-                  fieldErrors.addressLine?.[0]
-                }
+                error={fieldErrors.addressLine?.[0]}
               >
                 <Textarea
                   id="addressLine"
                   name="addressLine"
-                  defaultValue={
-                    address?.address_line ?? ""
-                  }
+                  placeholder="Mahalle, cadde, sokak ve bina bilgileri..."
                 />
               </FormField>
             </div>
@@ -409,8 +348,8 @@ export function BusinessEditForm({
           </h2>
 
           <p className="mt-1 text-sm text-muted">
-            Saat dilimi, para birimi ve varsayılan
-            dil ayarlarını yönetin.
+            İşletmenin varsayılan saat dilimi, para
+            birimi ve dil ayarları.
           </p>
         </CardHeader>
 
@@ -420,17 +359,12 @@ export function BusinessEditForm({
               label="Saat Dilimi"
               name="timezone"
               required
-              error={
-                fieldErrors.timezone?.[0]
-              }
+              error={fieldErrors.timezone?.[0]}
             >
               <Input
                 id="timezone"
                 name="timezone"
-                defaultValue={
-                  settings?.timezone ??
-                  "Europe/Istanbul"
-                }
+                defaultValue="Europe/Istanbul"
                 hasError={Boolean(
                   fieldErrors.timezone,
                 )}
@@ -441,16 +375,12 @@ export function BusinessEditForm({
               label="Para Birimi"
               name="currency"
               required
-              error={
-                fieldErrors.currency?.[0]
-              }
+              error={fieldErrors.currency?.[0]}
             >
               <Select
                 id="currency"
                 name="currency"
-                defaultValue={
-                  settings?.currency ?? "TRY"
-                }
+                defaultValue="TRY"
               >
                 <option value="TRY">
                   TRY — Türk Lirası
@@ -468,16 +398,12 @@ export function BusinessEditForm({
               label="Dil"
               name="languageCode"
               required
-              error={
-                fieldErrors.languageCode?.[0]
-              }
+              error={fieldErrors.languageCode?.[0]}
             >
               <Select
                 id="languageCode"
                 name="languageCode"
-                defaultValue={
-                  settings?.language_code ?? "tr"
-                }
+                defaultValue="tr"
               >
                 <option value="tr">
                   Türkçe
@@ -493,18 +419,14 @@ export function BusinessEditForm({
 
       <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
         <Link
-          href={`/business/${business.id}`}
+          href="/business"
           className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground transition hover:bg-surface-subtle"
         >
           İptal
         </Link>
 
         <SubmitButton>
-          <Save
-            className="h-4 w-4"
-            strokeWidth={1.8}
-          />
-          Değişiklikleri Kaydet
+          İşletmeyi Oluştur
         </SubmitButton>
       </div>
     </form>

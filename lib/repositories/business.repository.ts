@@ -1,4 +1,7 @@
 import type {
+  ArchiveBusinessSchema,
+  CreateBusinessSchema,
+  SetBusinessActiveStatusSchema,
   UpdateBusinessSchema,
 } from "@/lib/business/validation";
 
@@ -9,6 +12,8 @@ export type BusinessRecord = {
   name: string;
   slug: string;
   is_active: boolean;
+  archived_at: string | null;
+  archived_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -74,8 +79,10 @@ export async function getBusinessById(
         name,
         slug,
         is_active,
-        created_at,
-        updated_at
+archived_at,
+archived_by,
+created_at,
+updated_at
       `
     )
     .eq("id", businessId)
@@ -108,8 +115,10 @@ export async function getBusinessDetail(
           name,
           slug,
           is_active,
-          created_at,
-          updated_at
+archived_at,
+archived_by,
+created_at,
+updated_at
         `
       )
       .eq("id", businessId)
@@ -173,6 +182,52 @@ export async function getBusinessDetail(
   };
 }
 
+export async function createBusiness(
+  input: CreateBusinessSchema,
+): Promise<string> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc(
+    "create_business_details",
+    {
+      p_name: input.name,
+      p_slug: input.slug,
+
+      p_legal_name: input.legalName ?? "",
+      p_description: input.description ?? "",
+
+      p_phone: input.phone ?? "",
+      p_email: input.email ?? "",
+      p_website: input.website ?? "",
+
+      p_tax_office: input.taxOffice ?? "",
+      p_tax_number: input.taxNumber ?? "",
+
+      p_country_code: input.countryCode,
+      p_city: input.city ?? "",
+      p_district: input.district ?? "",
+      p_address_line: input.addressLine ?? "",
+      p_postal_code: input.postalCode ?? "",
+
+      p_timezone: input.timezone,
+      p_currency: input.currency,
+      p_language_code: input.languageCode,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "İşletme oluşturma işlemi sonuç döndürmedi.",
+    );
+  }
+
+  return data;
+}
+
 export async function updateBusiness(
   input: UpdateBusinessSchema
 ): Promise<string> {
@@ -221,10 +276,42 @@ export async function updateBusiness(
   return data;
 }
 
-export async function listBusinesses(): Promise<BusinessRecord[]> {
+export type ListBusinessesParams = {
+  search?: string;
+  status?: "all" | "active" | "passive" | "archived";
+  page?: number;
+  pageSize?: number;
+};
+
+export type ListBusinessesResult = {
+  data: BusinessRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export async function listBusinesses({
+  search = "",
+  status = "all",
+  page = 1,
+  pageSize = 10,
+}: ListBusinessesParams = {}): Promise<ListBusinessesResult> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(
+    Math.max(1, pageSize),
+    100,
+  );
+
+  const from =
+    (safePage - 1) * safePageSize;
+
+  const to =
+    from + safePageSize - 1;
+
+  let query = supabase
     .from("businesses")
     .select(
       `
@@ -232,17 +319,138 @@ export async function listBusinesses(): Promise<BusinessRecord[]> {
         name,
         slug,
         is_active,
+        archived_at,
+        archived_by,
         created_at,
         updated_at
-      `
+      `,
+      {
+        count: "exact",
+      },
     )
     .order("created_at", {
       ascending: false,
     });
 
+  const normalizedSearch =
+    search.trim();
+
+  if (normalizedSearch) {
+    const escapedSearch =
+      normalizedSearch
+        .replaceAll(",", "")
+        .replaceAll("%", "");
+
+    query = query.or(
+      `name.ilike.%${escapedSearch}%,slug.ilike.%${escapedSearch}%`,
+    );
+  }
+
+  if (status === "archived") {
+    query = query.not(
+      "archived_at",
+      "is",
+      null,
+    );
+  } else {
+    query = query.is(
+      "archived_at",
+      null,
+    );
+
+    if (status === "active") {
+      query = query.eq(
+        "is_active",
+        true,
+      );
+    }
+
+    if (status === "passive") {
+      query = query.eq(
+        "is_active",
+        false,
+      );
+    }
+  }
+
+  const {
+    data,
+    error,
+    count,
+  } = await query.range(
+    from,
+    to,
+  );
+
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  const total = count ?? 0;
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      total / safePageSize,
+    ),
+  );
+
+  return {
+    data: data ?? [],
+    total,
+    page: safePage,
+    pageSize: safePageSize,
+    totalPages,
+  };
+}
+
+export async function setBusinessActiveStatus(
+  input: SetBusinessActiveStatusSchema,
+): Promise<string> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc(
+    "set_business_active_status",
+    {
+      p_business_id: input.businessId,
+      p_is_active: input.isActive,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "İşletme durum değiştirme işlemi sonuç döndürmedi.",
+    );
+  }
+
+  return data;
+}
+
+export async function archiveBusiness(
+  input: ArchiveBusinessSchema,
+): Promise<string> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc(
+    "archive_business",
+    {
+      p_business_id: input.businessId,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "İşletme arşivleme işlemi sonuç döndürmedi.",
+    );
+  }
+
+  return data;
 }
