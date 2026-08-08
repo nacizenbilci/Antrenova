@@ -129,3 +129,17 @@ export const archiveBusinessSchema =
 
 export type ArchiveBusinessSchema =
   z.infer<typeof archiveBusinessSchema>;
+
+  export const businessLogoSchema = z.object({
+  businessId: uuidSchema,
+});
+
+export type BusinessLogoSchema =
+  z.infer<typeof businessLogoSchema>;
+
+  export const restoreBusinessSchema = z.object({
+  businessId: uuidSchema,
+});
+
+export type RestoreBusinessSchema =
+  z.infer<typeof restoreBusinessSchema>;

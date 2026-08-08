@@ -1,11 +1,139 @@
 import type {
   ArchiveBusinessSchema,
+  BusinessLogoSchema,
   CreateBusinessSchema,
+  RestoreBusinessSchema,
   SetBusinessActiveStatusSchema,
   UpdateBusinessSchema,
 } from "@/lib/business/validation";
 
 import { createClient } from "@/lib/supabase/server";
+
+const BUSINESS_LOGO_BUCKET =
+  "business-logos";
+
+const ALLOWED_LOGO_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
+const MAX_LOGO_SIZE =
+  2 * 1024 * 1024;
+
+export async function uploadBusinessLogo(
+  input: BusinessLogoSchema,
+  file: File,
+): Promise<string> {
+  if (
+    !ALLOWED_LOGO_TYPES.includes(
+      file.type,
+    )
+  ) {
+    throw new Error(
+      "Logo yalnızca JPG, PNG veya WEBP formatında olabilir.",
+    );
+  }
+
+  if (
+    file.size <= 0 ||
+    file.size > MAX_LOGO_SIZE
+  ) {
+    throw new Error(
+      "Logo dosyası en fazla 2 MB olabilir.",
+    );
+  }
+
+  const supabase =
+    await createClient();
+
+  const storagePath =
+    `businesses/${input.businessId}/logo`;
+
+  const { error: uploadError } =
+    await supabase.storage
+      .from(BUSINESS_LOGO_BUCKET)
+      .upload(
+        storagePath,
+        file,
+        {
+          upsert: true,
+          contentType: file.type,
+          cacheControl: "3600",
+        },
+      );
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const {
+    data: publicUrlData,
+  } = supabase.storage
+    .from(BUSINESS_LOGO_BUCKET)
+    .getPublicUrl(storagePath);
+
+  const logoUrl =
+    `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+  const {
+    error: brandingError,
+  } = await supabase
+    .from("business_branding")
+    .update({
+      logo_url: logoUrl,
+      updated_at:
+        new Date().toISOString(),
+    })
+    .eq(
+      "business_id",
+      input.businessId,
+    );
+
+  if (brandingError) {
+    throw brandingError;
+  }
+
+  return logoUrl;
+}
+
+export async function removeBusinessLogo(
+  input: BusinessLogoSchema,
+): Promise<void> {
+  const supabase =
+    await createClient();
+
+  const storagePath =
+    `businesses/${input.businessId}/logo`;
+
+  const {
+    error: storageError,
+  } = await supabase.storage
+    .from(BUSINESS_LOGO_BUCKET)
+    .remove([storagePath]);
+
+  if (storageError) {
+    throw storageError;
+  }
+
+  const {
+    error: brandingError,
+  } = await supabase
+    .from("business_branding")
+    .update({
+      logo_url: null,
+      updated_at:
+        new Date().toISOString(),
+    })
+    .eq(
+      "business_id",
+      input.businessId,
+    );
+
+  if (brandingError) {
+    throw brandingError;
+  }
+}
 
 export type BusinessRecord = {
   id: string;
@@ -17,6 +145,11 @@ export type BusinessRecord = {
   created_at: string;
   updated_at: string;
 };
+
+export type BusinessListRecord =
+  BusinessRecord & {
+    logo_url: string | null;
+  };
 
 export type BusinessProfileRecord = {
   business_id: string;
@@ -284,7 +417,7 @@ export type ListBusinessesParams = {
 };
 
 export type ListBusinessesResult = {
-  data: BusinessRecord[];
+  data: BusinessListRecord[];
   total: number;
   page: number;
   pageSize: number;
@@ -388,20 +521,80 @@ export async function listBusinesses({
 
   const total = count ?? 0;
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      total / safePageSize,
-    ),
-  );
+const totalPages = Math.max(
+  1,
+  Math.ceil(
+    total / safePageSize,
+  ),
+);
 
+const businesses =
+  data ?? [];
+
+if (businesses.length === 0) {
   return {
-    data: data ?? [],
+    data: [],
     total,
     page: safePage,
     pageSize: safePageSize,
     totalPages,
   };
+}
+
+const businessIds =
+  businesses.map(
+    (business) => business.id,
+  );
+
+const {
+  data: brandingData,
+  error: brandingError,
+} = await supabase
+  .from("business_branding")
+  .select(
+    `
+      business_id,
+      logo_url
+    `,
+  )
+  .in(
+    "business_id",
+    businessIds,
+  );
+
+if (brandingError) {
+  throw brandingError;
+}
+
+const logoByBusinessId =
+  new Map(
+    (brandingData ?? []).map(
+      (branding) => [
+        branding.business_id,
+        branding.logo_url,
+      ],
+    ),
+  );
+
+const businessesWithLogo:
+  BusinessListRecord[] =
+  businesses.map(
+    (business) => ({
+      ...business,
+      logo_url:
+        logoByBusinessId.get(
+          business.id,
+        ) ?? null,
+    }),
+  );
+
+return {
+  data: businessesWithLogo,
+  total,
+  page: safePage,
+  pageSize: safePageSize,
+  totalPages,
+};
 }
 
 export async function setBusinessActiveStatus(
@@ -449,6 +642,107 @@ export async function archiveBusiness(
   if (!data) {
     throw new Error(
       "İşletme arşivleme işlemi sonuç döndürmedi.",
+    );
+  }
+
+  return data;
+}
+
+
+export type BusinessStats = {
+  total: number;
+  active: number;
+  passive: number;
+  archived: number;
+};
+
+export async function getBusinessStats(): Promise<BusinessStats> {
+  const supabase = await createClient();
+
+  const [
+    totalResult,
+    activeResult,
+    passiveResult,
+    archivedResult,
+  ] = await Promise.all([
+    supabase
+      .from("businesses")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .is("archived_at", null),
+
+    supabase
+      .from("businesses")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .is("archived_at", null)
+      .eq("is_active", true),
+
+    supabase
+      .from("businesses")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .is("archived_at", null)
+      .eq("is_active", false),
+
+    supabase
+      .from("businesses")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .not("archived_at", "is", null),
+  ]);
+
+  if (totalResult.error) {
+    throw totalResult.error;
+  }
+
+  if (activeResult.error) {
+    throw activeResult.error;
+  }
+
+  if (passiveResult.error) {
+    throw passiveResult.error;
+  }
+
+  if (archivedResult.error) {
+    throw archivedResult.error;
+  }
+
+  return {
+    total: totalResult.count ?? 0,
+    active: activeResult.count ?? 0,
+    passive: passiveResult.count ?? 0,
+    archived: archivedResult.count ?? 0,
+  };
+}
+
+export async function restoreBusiness(
+  input: RestoreBusinessSchema,
+): Promise<string> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc(
+    "restore_business",
+    {
+      p_business_id: input.businessId,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "İşletmeyi arşivden çıkarma işlemi sonuç döndürmedi.",
     );
   }
 

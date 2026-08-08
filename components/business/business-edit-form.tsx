@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 
 import { updateBusinessAction } from "@/lib/business/actions";
-
+import { BusinessLogoManager } from "@/components/business/business-logo-manager";
 import type {
   BusinessDetailRecord,
 } from "@/lib/repositories/business.repository";
@@ -36,6 +36,7 @@ export function BusinessEditForm({
     profile,
     address,
     settings,
+     branding,
   } = detail;
 
   const [fieldErrors, setFieldErrors] =
@@ -490,6 +491,29 @@ export function BusinessEditForm({
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+  <CardHeader>
+    <h2 className="text-base font-semibold text-foreground">
+      Marka
+    </h2>
+
+    <p className="mt-1 text-sm text-muted">
+      İşletmenin AntreNova içerisinde
+      kullanılacak kurumsal logosunu yönetin.
+    </p>
+  </CardHeader>
+
+  <CardContent>
+    <BusinessLogoManager
+      businessId={business.id}
+      businessName={business.name}
+      initialLogoUrl={
+        branding?.logo_url ?? null
+      }
+    />
+  </CardContent>
+</Card>
 
       <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
         <Link

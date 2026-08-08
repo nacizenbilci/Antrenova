@@ -16,15 +16,20 @@ import { PERMISSIONS } from "@/lib/auth/rbac-types";
 import {
   archiveBusiness,
   createBusiness,
+  removeBusinessLogo,
   setBusinessActiveStatus,
   updateBusiness,
+  uploadBusinessLogo,
+  restoreBusiness,
 } from "@/lib/repositories/business.repository";
 
 import {
   archiveBusinessSchema,
+  businessLogoSchema,
   createBusinessSchema,
   setBusinessActiveStatusSchema,
   updateBusinessSchema,
+  restoreBusinessSchema,
 } from "@/lib/business/validation";
 
 export async function createBusinessAction(
@@ -136,6 +141,111 @@ export async function archiveBusinessAction(
 
       const businessId =
         await archiveBusiness(data);
+
+      revalidatePath("/");
+      revalidatePath("/business");
+      revalidatePath(
+        `/business/${businessId}`,
+      );
+
+      return {
+        businessId,
+      };
+    },
+  });
+}
+
+export async function uploadBusinessLogoAction(
+  input: unknown,
+  file: File,
+) {
+  return runBusinessAction({
+    schema: businessLogoSchema,
+    input,
+
+    permission:
+      PERMISSIONS.BUSINESSES_UPDATE,
+
+    getBusinessId: (data) =>
+      data.businessId,
+
+    execute: async (data) => {
+      const logoUrl =
+        await uploadBusinessLogo(
+          data,
+          file,
+        );
+
+      revalidatePath("/business");
+      revalidatePath(
+        `/business/${data.businessId}`,
+      );
+      revalidatePath(
+        `/business/${data.businessId}/edit`,
+      );
+
+      return {
+        businessId:
+          data.businessId,
+        logoUrl,
+      };
+    },
+  });
+}
+
+export async function removeBusinessLogoAction(
+  input: unknown,
+) {
+  return runBusinessAction({
+    schema: businessLogoSchema,
+    input,
+
+    permission:
+      PERMISSIONS.BUSINESSES_UPDATE,
+
+    getBusinessId: (data) =>
+      data.businessId,
+
+    execute: async (data) => {
+      await removeBusinessLogo(
+        data,
+      );
+
+      revalidatePath("/business");
+      revalidatePath(
+        `/business/${data.businessId}`,
+      );
+      revalidatePath(
+        `/business/${data.businessId}/edit`,
+      );
+
+      return {
+        businessId:
+          data.businessId,
+      };
+    },
+  });
+}
+
+export async function restoreBusinessAction(
+  input: unknown,
+) {
+  return runAuthenticatedAction({
+    schema: restoreBusinessSchema,
+    input,
+
+    execute: async (data) => {
+      const platformAdmin =
+        await isPlatformAdmin();
+
+      if (!platformAdmin) {
+        throw new Error(
+          "PLATFORM_ADMIN_REQUIRED",
+        );
+      }
+
+      const businessId =
+        await restoreBusiness(data);
 
       revalidatePath("/");
       revalidatePath("/business");
